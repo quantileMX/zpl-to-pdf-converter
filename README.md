@@ -17,8 +17,8 @@ Convertidor ligero basado en Python que transforma archivos ZPL (Zebra Programmi
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/TU_USUARIO/txt_to_pdf.git
-cd txt_to_pdf
+git clone https://github.com/quantileMX/zpl-to-pdf-converter.git
+cd zpl-to-pdf-converter
 
 # Construir y ejecutar con Docker Compose
 docker-compose up -d
@@ -434,8 +434,8 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # 3. Clonar repositorio
-git clone https://github.com/TU_USUARIO/txt_to_pdf.git
-cd txt_to_pdf
+git clone https://github.com/quantileMX/zpl-to-pdf-converter.git
+cd zpl-to-pdf-converter
 
 # 4. Iniciar servicio
 docker-compose up -d
