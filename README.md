@@ -182,9 +182,6 @@ txt_to_pdf/
 │       └── label.py         # Modelos de datos
 ├── cli/
 │   └── convert.py           # Herramienta de línea de comandos
-├── tests/
-│   ├── test_parser.py
-│   └── test_generator.py
 ├── examples/
 │   └── Envio-*.txt          # Archivo de ejemplo
 ├── Dockerfile
@@ -302,12 +299,6 @@ El contenedor Docker puede desplegarse en:
 ## Pruebas
 
 ```bash
-# Activar entorno
-conda activate z-pdf
-
-# Ejecutar pruebas
-python -m pytest tests/ -v
-
 # Probar con archivo de ejemplo
 python cli/convert.py examples/Envio-59320753-Etiquetas-de-productos.txt -v
 
