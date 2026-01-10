@@ -6,9 +6,10 @@ Convertidor ligero basado en Python que transforma archivos ZPL (Zebra Programmi
 
 - **Análisis de ZPL**: Extrae datos de productos desde archivos de etiquetas térmicas ZPL
 - **Generación de PDF**: Crea PDFs imprimibles con códigos de barras Code 128
-- **Soporte de Cantidad**: Duplica automáticamente las etiquetas según la cantidad especificada
+- **Soporte Unicode Completo**: Manejo correcto de caracteres acentuados (á, é, í, ó, ú, ñ) con fuentes DejaVuSans
+- **Formato Térmico**: Etiquetas térmicas de 2" x 1" (formato estándar)
 - **Múltiples Formatos**: Herramienta CLI y API REST
-- **Docker**: Listo para desplegar en contenedor
+- **Docker**: Listo para desplegar en contenedor con fuentes incluidas
 - **Ligero**: ~25MB de dependencias, ~200MB imagen Docker
 
 ## Inicio Rápido
@@ -65,7 +66,7 @@ python cli/convert.py etiquetas.txt -v
 **Resultado:**
 ```
 ✓ Se encontraron 34 productos únicos
-✓ Total de etiquetas a generar: 1916
+✓ Generando 34 etiquetas (una por producto)
 ✓ PDF generado: etiquetas.pdf
 ```
 
@@ -126,7 +127,7 @@ El convertidor espera archivos ZPL con la siguiente estructura:
 ^FO22,115^A0N,18,18^FB380,2,0,L^FH^FD[NOMBRE]^FS # Nombre del producto
 ^FO22,150^A0N,18,18^FB380,1,0,L^FH^FD[COLOR]^FS  # Color/variante
 ^FO22,170^A0N,18,18^FH^FDSKU: DV002^FS         # SKU
-^PQ48,0,1,Y^XZ                                  # Cantidad (48 copias)
+^PQ48,0,1,Y^XZ                                  # Cantidad (48 items en caja)
 ```
 
 ### Campos Extraídos
@@ -135,29 +136,32 @@ El convertidor espera archivos ZPL con la siguiente estructura:
 - **Nombre del producto**: Descripción del producto (soporta múltiples líneas)
 - **Color/Variante**: Información opcional de color o variante
 - **SKU**: Código de unidad de mantenimiento de existencias
-- **Cantidad**: Número de copias de etiqueta a generar
+- **Cantidad**: Número de artículos en la caja (informativo, no duplica etiquetas)
 
 ## Salida PDF
 
 ### Especificaciones de Etiqueta
 
-- **Tamaño de etiqueta**: 4" x 2" (compatible con impresora térmica)
-- **Tamaño de página**: Carta (8.5" x 11")
-- **Diseño**: 2 columnas × 5 filas = 10 etiquetas por página
-- **Código de barras**: Formato Code 128
-- **Márgenes**: 0.25" entre etiquetas
+- **Formato**: Etiqueta térmica estándar (2" x 1" por producto)
+- **Tamaño de página**: 2 pulgadas de ancho × 1 pulgada de alto
+- **Diseño**: Una etiqueta térmica compacta por página
+- **Código de barras**: Code 128 centrado (0.8 bar width, 0.25" altura)
+- **Fuentes**: DejaVuSans para soporte completo de Unicode (5-8pt según elemento)
+- **Codificación**: UTF-8 con decodificación automática de secuencias hex ZPL (ej: _C3_B3 → ó)
 
 ### Diseño de Etiqueta
 
 ```
-┌─────────────────────────┐
-│  [===CÓDIGO-BARRAS===]  │  Código de barras (Code 128)
-│   GCOI36235             │  Texto del código
-│                         │
-│  Nombre del Producto    │  Descripción del producto
-│  Blanco                 │  Color/variante
-│  SKU: DV002             │  Código SKU
-└─────────────────────────┘
+┌────────────────────┐ (2" × 1" térmica)
+│  [==CÓDIGO-BAR==]  │  Barcode centrado
+│     GCOI36235      │  Texto código (8pt)
+│                    │
+│ Nombre Producto    │  (5pt, negrita)
+│ con Acentuación    │  Múltiples líneas
+│                    │
+│ Blanco/Color       │  (5pt, negrita)
+│ SKU: DV002         │  (5pt, negrita)
+└────────────────────┘
 ```
 
 ## Estructura del Proyecto
@@ -199,9 +203,10 @@ reportlab==4.0.9           # Generación de PDF
 python-barcode==0.15.1     # Códigos de barras Code 128
 pillow==10.2.0             # Soporte de imágenes
 pydantic==2.5.3            # Validación de datos
+fonts-dejavu-core          # Fuentes Unicode (instaladas en Docker)
 ```
 
-**Tamaño total**: ~25MB instalado
+**Tamaño total**: ~25MB instalado + fuentes DejaVu (~500KB)
 
 ## Configuración
 
@@ -328,13 +333,30 @@ Respuestas de error incluyen:
 
 ## Rendimiento
 
-Pruebas de referencia (archivo de ejemplo con 1,916 etiquetas):
+Pruebas de referencia (archivo de ejemplo con 34 productos):
 
 - **Análisis**: < 1 segundo
-- **Generación de PDF**: ~2 segundos
-- **Tiempo Total**: ~3 segundos
-- **Uso de Memoria**: ~50MB base + ~1MB por 100 etiquetas
-- **Tamaño de PDF**: ~120 bytes por etiqueta
+- **Generación de PDF**: < 1 segundo
+- **Tiempo Total**: < 2 segundos
+- **Uso de Memoria**: ~50MB base + mínimo adicional
+- **Tamaño de PDF**: ~800 bytes por etiqueta térmica (2" × 1")
+
+## Características Técnicas
+
+### Soporte de Caracteres Especiales
+
+El generador incluye decodificación automática de secuencias hexadecimales ZPL:
+
+- **Secuencias multi-byte**: `_C3_B3` → `ó`, `_C3_A1` → `á`
+- **Fuente Unicode**: DejaVuSans/DejaVuSans-Bold registradas automáticamente
+- **Fallback**: Helvetica si DejaVu no está disponible
+- **Codificación**: UTF-8 completo soportado
+
+Ejemplo de transformación:
+```
+ZPL Input:  "Organizaci_C3_B3n"
+PDF Output: "Organización"
+```
 
 ## Seguridad
 
@@ -368,10 +390,14 @@ docker system prune -a
 docker-compose build --no-cache
 ```
 
-**4. Caracteres especiales no se muestran**
+**4. Caracteres acentuados no se muestran correctamente**
 ```
-# ZPL usa codificación hex (_C3_B3 = ó)
-# El analizador decodifica automáticamente estos
+# Solución implementada:
+# - ZPL codifica caracteres UTF-8 como secuencias hex (_C3_B3 = ó)
+# - El generador decodifica automáticamente secuencias multi-byte
+# - Se usa fuente DejaVuSans con soporte Unicode completo
+# - Docker incluye fuentes DejaVu en la imagen final
+# Todos los caracteres acentuados (á, é, í, ó, ú, ñ) funcionan correctamente
 ```
 
 **5. Código de barras no legible**
@@ -392,15 +418,16 @@ Salida: Envio-59320753-Etiquetas-de-productos.pdf
 
 Analizando archivo ZPL...
 ✓ Se encontraron 34 productos únicos
-✓ Total de etiquetas a generar: 1916
+✓ Generando 34 etiquetas (una por producto)
+  Nota: Cantidad indica items en caja, no copias de etiqueta
 
 Etiquetas de ejemplo:
   1. Servilletero Despachador De Servilletas Barramesa...
-     SKU: DV002, Cant: 48
+     SKU: DV002, Qty: 48 items en caja
   2. Despachador De Toalla Interdoblada Tipo Sanitas...
-     SKU: DV046, Cant: 10
+     SKU: DV046, Qty: 10 items en caja
   3. Dispensador Toalla Interdoblada / Sanitas Oval...
-     SKU: DV075, Cant: 84
+     SKU: DV075, Qty: 84 items en caja
   ... y 31 más
 
 Generando PDF...
@@ -409,7 +436,7 @@ Generando PDF...
 ✓ PDF generado: Envio-59320753-Etiquetas-de-productos.pdf
 ```
 
-**Resultado**: PDF de 230 KB con 192 páginas conteniendo 1,916 etiquetas estilo térmico
+**Resultado**: PDF de 27 KB con 34 páginas conteniendo una etiqueta de página completa por producto
 
 ## Guía de Despliegue para IT
 

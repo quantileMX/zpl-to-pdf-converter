@@ -12,6 +12,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install fonts in final stage so they're available at runtime
+RUN apt-get update && apt-get install -y \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy Python packages from builder
 COPY --from=builder /root/.local /root/.local
 

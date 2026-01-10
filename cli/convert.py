@@ -74,15 +74,15 @@ def main():
 
         if args.verbose:
             print(f"✓ Found {len(labels)} unique products")
-            total_copies = sum(l.quantity for l in labels)
-            print(f"✓ Total labels to generate: {total_copies}")
+            print(f"✓ Generating {len(labels)} labels (one per product)")
+            print(f"  Note: Quantity field indicates items in box, not label copies")
             print()
 
             # Show first few labels
             print("Sample labels:")
             for i, label in enumerate(labels[:3], 1):
                 print(f"  {i}. {label.product_name[:50]}...")
-                print(f"     SKU: {label.sku}, Qty: {label.quantity}")
+                print(f"     SKU: {label.sku}, Qty: {label.quantity} items in box")
             if len(labels) > 3:
                 print(f"  ... and {len(labels) - 3} more")
             print()
