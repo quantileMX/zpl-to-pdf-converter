@@ -16,7 +16,7 @@ class ZPLParser:
     BARCODE_PATTERN = r'\^BCN,\d+,N,N\^FD([A-Z0-9]+)\^FS'
     PRODUCT_NAME_PATTERN = r'\^FO22,115.*?\^FD(.*?)\^FS'
     COLOR_PATTERN = r'\^FO22,150.*?\^FD(.*?)\^FS'
-    SKU_PATTERN = r'\^FO22,170.*?\^FDSKU:\s*([A-Z0-9]+)\^FS'
+    SKU_PATTERN = r'\^FO22,170.*?\^FDSKU:\s*([A-Z0-9/_\-.,]+)\^FS'
     QUANTITY_PATTERN = r'\^PQ(\d+)'
     HEX_CHAR_PATTERN = r'_([0-9A-F]{2})'
 
